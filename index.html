@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bugungi kun</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #eef3f8; margin: 0;
+         min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { background: #fff; padding: 28px 32px; border-radius: 16px; text-align: center;
+          box-shadow: 0 4px 20px rgba(0,0,0,.1); max-width: 340px; width: 90%; }
+  #date { font-size: 18px; color: #444; margin-bottom: 4px; }
+  #time { font-size: 14px; color: #888; margin-bottom: 20px; }
+  #icon { font-size: 56px; }
+  #temp { font-size: 42px; font-weight: 700; margin: 4px 0; }
+  #desc, #extra, #city { color: #555; margin: 4px 0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 style="margin:0 0 16px;font-size:24px;">Bugungi kun</h1>
+    <div id="date"></div>
+    <div id="time"></div>
+    <div id="icon">⏳</div>
+    <div id="temp">--</div>
+    <div id="desc">Ob-havo yuklanmoqda...</div>
+    <div id="city"></div>
+    <div id="extra"></div>
+  </div>
+
+<script>
+function showDate() {
+  const now = new Date();
+  document.getElementById("date").textContent =
+    now.toLocaleDateString("uz-UZ", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  document.getElementById("time").textContent =
+    "Kirgan vaqtingiz: " + now.toLocaleTimeString("uz-UZ");
+}
+showDate();const codes = {
+  0: ["☀️", "Ochiq osmon"], 1: ["🌤️", "Asosan ochiq"], 2: ["⛅", "Qisman bulutli"],
+  3: ["☁️", "Bulutli"], 45: ["🌫️", "Tuman"], 48: ["🌫️", "Tuman"],
+  51: ["🌦️", "Yengil shivalash"], 53: ["🌦️", "Shivalash"], 55: ["🌧️", "Kuchli shivalash"],
+  61: ["🌧️", "Yengil yomg'ir"], 63: ["🌧️", "Yomg'ir"], 65: ["🌧️", "Kuchli yomg'ir"],
+  71: ["🌨️", "Yengil qor"], 73: ["🌨️", "Qor"], 75: ["❄️", "Kuchli qor"],
+  80: ["🌦️", "Jala"], 95: ["⛈️", "Momaqaldiroq"]
+};
+
+async function loadWeather(lat, lon, cityName) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const c = data.current;
+    const [icon, text] = codes[c.weather_code] || ["🌡️", "Noma'lum"];
+    document.getElementById("icon").textContent = icon;
+    document.getElementById("temp").textContent = Math.round(c.temperature_2m) + "°C";
+    document.getElementById("desc").textContent = text;
+    document.getElementById("city").textContent = cityName;
+    document.getElementById("extra").textContent =
+      `Namlik: ${c.relative_humidity_2m}% · Shamol: ${c.wind_speed_10m} km/soat`;
+  } catch (e) {
+    document.getElementById("desc").textContent = "Ob-havoni yuklab bo'lmadi.";
+  }
+}
+
+const fallback = () => loadWeather(41.2995, 69.2401, "Toshkent");
+if (navigator.geolocation) {
+  navigator.geolocation.getCurrentPosition(
+    p => loadWeather(p.coords.latitude, p.coords.longitude, "Sizning joylashuvingiz"),
+    fallback,
+    { timeout: 8000 }
+  );
+} else {
+  fallback();
+}
+</script>
+</body>
+</html>
